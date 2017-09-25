@@ -1,0 +1,40 @@
+Robert Kuliñski
+
+Cel projektu:
+Rysowanie rozwi¹zañ optymalnych dla zagadnienia programowania liniowego.
+Obecny etap:
+Podajemy wspó³czynniki wielomianu, które s¹ przesy³ane do serwera, który odpowiada wyliczonymi punktami, z których rysowane s¹ linie.
+
+Nastêpny etap:
+Dodanie prostych ograniczaj¹cych i zaznaczenie obszaru rozwi¹zañ dopuszczalnych.
+
+Wykorzystane technologie:
+	Server:
+	 node.js express
+
+	Front-end:
+	 javascript
+	 ajax
+	 html
+	 css
+
+
+Opis projektu:
+Projekt zawiera dwa pliki. 
+
+Plik "Graphs.html" zawiera, oprócz rysowania wykresu,
+kod javascript, który odpowiedzialny jest za przes³anie i odebranie danych z
+serwera (u¿yto techniki "ajax"). Przesy³ane s¹ wspó³czynniki wielomianów, a
+zwracane s¹ punkty do rysowania wykresu.
+
+Plik "points_calculation.js" jest kodem napisanym w node.js.
+Program ten odbiera dane przes³ane przez przegl¹darkê na adresie
+"http://localhost:8080/" (adres serwera), liczy punkty i odsy³a odpowiedŸ.
+Zapisuje zestawy punktów do bazy SQL.
+
+Aby korzystaæ z po³¹czenia SQL nale¿y posiadaæ bazê mysql z tabel¹ "solutions" i w programie (points_calcuiation.js) zmieniæ
+dane/adres do serwera.
+
+Konieczna mo¿e byæ instalacja bibliotek w konsoli przy u¿yciu polecenia npm (express, body-parser, request, mssql).
+Nastêpnie w konsoli przejœæ do lokalizacji pliku "points_calculation.js" i wywo³aæ komendê
+"node points_calculation.js". Wtedy mo¿na w³¹czyæ plik "Graphs.html" w przegl¹darce i korzystaæ ze strony.

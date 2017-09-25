@@ -1,0 +1,256 @@
+<!doctype html>
+<!--Created by Robert Kuliński-->
+<head>
+  <meta charset="utf-8">
+  <title>Ograniczenia</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?..."></script>
+</head>
+
+<style>
+	body {
+		font-family: Arial, Helvetica, sans-serif;
+		padding: 20px;
+	}
+
+	div {
+		margin: 10px;
+	}
+
+	input {
+		width: 40px;
+		color: #736AFF;
+		font-style: italic;
+		font-size: 20px;
+		text-align: right;
+	}
+
+	button {
+		background-color:#7892c2;
+		-moz-border-radius:28px;
+		-webkit-border-radius:28px;
+		border-radius:28px;
+		border:1px solid #4e6096;
+		display:inline-block;
+		cursor:pointer;
+		color:#ffffff;
+		font-family:Arial;
+		font-size:18px;
+		padding:9px 29px;
+		text-decoration:none;
+		text-shadow:0px 1px 0px #283966;
+	}
+
+	button:hover {
+		background-color:#476e9e;
+	}
+
+	button:active {
+		position:relative;
+		top:1px;
+	}
+
+	.remove_btn {
+		-webkit-border-radius: 20;
+		-moz-border-radius: 20;
+		border-radius: 25px;
+		margin-left: 20px;
+		font-family: Arial;
+		color: #ffffff;
+		font-size: 20px;
+		background: #3498db;
+		padding: 7px 15px 7px 15px;
+		text-decoration: none;
+	}
+
+	.remove_btn:hover {
+		background: #ff0000;
+		text-decoration: none;
+	}
+
+	.add_btn {
+		-webkit-border-radius: 20;
+		-moz-border-radius: 20;
+		border-radius: 25px;
+		font-family: Arial;
+		color: #ffffff;
+		font-size: 20px;
+		background: #3498db;
+		padding: 7px 12px 7px 12px;
+		text-decoration: none;
+	}
+
+	.add_btn:hover {
+		background: #00ff00;
+		text-decoration: none;
+	}
+
+	.graph_area {
+		width: 900px;
+		height: 900px;
+	}	
+
+	.constraints {
+		width: 400px;
+		padding: 10px;
+	}
+</style>
+
+<script>
+'use strict'
+
+$(document).ready(function() { 
+	draw_axes();
+});
+
+var canvas,
+	context;
+
+function fetchPointsFromServer(url, axis_coeffs, writeState, drawGraphs) {
+	//ajax query
+	var xhttp;
+	xhttp = new XMLHttpRequest();
+	xhttp.onreadystatechange = function() {
+		console.log('fetchPoints:  readystate: ', this.readyState, ' status: ', this.status);
+		if (this.readyState === 4 && this.status === 200) {
+			writeState("projekt_zaliczeniowy", "Request OK");
+			drawGraphs(xhttp.responseText);
+		}
+		else if (this.readyState === 4 && this.status === 0) {
+			writeState("projekt_zaliczeniowy", "Server Error");
+		}
+		else {
+			writeState("projekt_zaliczeniowy", "Waiting...");
+		}
+	};
+
+	xhttp.open("POST", url, true);
+	xhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+	xhttp.send(axis_coeffs);
+}
+
+function writeStatusOnScreen(element_id, server_state) {
+  document.getElementById(element_id).innerHTML = server_state;
+}
+
+
+status_polaczenia_z_bd
+function drawGraphs(response) {
+	var gv_obj = JSON.parse(response);
+
+	console.log('canvas', canvas);
+	context.clearRect(0, 0, canvas.width, canvas.height);
+	draw_axes();	
+	for (var i = 0, len = (gv_obj.length-1); i < len; i++) {
+
+			var x1is0 = gv_obj[i].x1is0[0],
+			x2is0 = gv_obj[i].x2is0[1];
+			context.beginPath();
+			context.moveTo(100, t(x2is0 + 100));
+			context.lineTo(x1is0 + 100, t(100));
+			context.stroke();
+	}
+	context.beginPath();
+	context.moveTo(100, t(100));
+	context.lineTo(100, t(gv_obj[gv_obj.length-1].p0[1] + 100));
+	context.lineTo(gv_obj[gv_obj.length-1].p1[0] + 100, t(gv_obj[gv_obj.length-1].p1[1] + 100));
+	context.lineTo(gv_obj[gv_obj.length-1].p2[0] + 100, t(100));
+	context.stroke();
+	context.fill();
+}
+
+function appendFormset(formset) {
+	var new_formset = '<div> <input type="text" value="1"> x<sub>1</sub> <b>+</b> <input type="text" value="1"> x<sub>2</sub> <b>&le;</b> <input type="text" class="y"  value="1"> <button class="remove_btn" type="button" onclick="deleteFormset(this)"> - </button> </div>';
+	$(formset).parent().append(new_formset);				
+}
+
+function deleteFormset(formset) {
+	$(formset).parent().remove();
+}
+
+function getValuesFromInputFieldsAsArray(div_id) {
+	var output_array =[],
+	local_index = 0,
+	array_index = 0;
+
+	$(div_id).find('input').each(function(index) {
+		local_index = index % 3;
+		array_index = Math.floor(index/3);
+		if (local_index === 0) output_array[array_index] = {};
+		output_array[array_index]['a'+(local_index)] = $(this).val();
+	});
+	return output_array;
+}
+
+function preparePointsAndSend() {
+	var gv = [],
+	gv_json ='';
+
+	gv = gv.concat(getValuesFromInputFieldsAsArray('#target_function'), getValuesFromInputFieldsAsArray('#dynamic_constraints'));
+	gv_json = JSON.stringify(gv);
+	fetchPointsFromServer('http://localhost:8080/',gv_json ,writeStatusOnScreen, drawGraphs);
+}
+
+function draw_axes() {
+	canvas = document.getElementById("canvas");
+	context = canvas.getContext("2d");
+	context.clearRect(0, 0, canvas.width, canvas.height);
+	context.beginPath();
+	context.moveTo(100, t(100));
+	context.lineTo(700, t(100));
+	context.moveTo(100, t(100));
+	context.lineTo(100, t(700));
+	context.stroke();
+}
+
+function t(ref) {
+	return 800-ref;
+}
+</script>
+
+<body>
+	<p id="projekt_zaliczeniowy"></p>
+	<p id="status_polaczenia_z_bd"></p>
+    <div>
+        <form>
+			<div>
+					<h2> Funkcja do maksymalizacji </h2>
+				<div id="target_function">
+					<div>
+						 <b>(max) z = </b>
+						<input type="text" id="a11" value="1"> x<sub>1</sub> +
+						<input type="text" id="a12" value="1"> x<sub>2</sub>
+					</div>
+				</div>
+			</div>
+			<div class="constraints" id="dynamic_constraints">
+					<h2> Ograniczenia </h2>
+					<button class="add_btn" type="button" onclick="appendFormset(this)"> + </button>
+					<div>
+						<p>
+							<b> x<sub>1</sub>, x<sub>2</sub> &ge; 0 </b>
+						</p>
+					</div>
+					<div>
+							<input type="text" value="1"> x<sub>1</sub> <b>+</b>
+							<input type="text" value="1"> x<sub>2</sub> <b>&le;</b>
+							<input type="text" class="y"  value="1">
+							<button class="remove_btn" type="button" onclick="deleteFormset(this)"> - </button>
+					</div>
+					<div>
+							<input type="text" value="1"> x<sub>1</sub> <b>+</b>
+							<input type="text" value="1"> x<sub>2</sub> <b>&le;</b>
+							<input type="text" class="y"  value="1">
+							<button class="remove_btn" type="button" onclick="deleteFormset(this)"> - </button>
+					</div>
+				</div>
+            <button id="draw_graphs" type="button" onclick="preparePointsAndSend()">Draw possible solutions</button>
+        </form>
+    </div>
+    <div class="graph_area">
+		<p style="margin-bottom: 0px"><b> x1 </b></p>
+		<canvas width="800" height="800" id="canvas">Canvas not supported</canvas>
+		<p style="text-align: right; margin-top: 0px"><b> x2 </b></p>
+    </div>
+</body>
+</html>
